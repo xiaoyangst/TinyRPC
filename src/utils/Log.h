@@ -61,7 +61,7 @@ std::string levelToString(LOGLEVEL level) {
 }
 
 template<typename... Args>
-void log(LOGLEVEL level, const std::string &format, Args &&... args) {
+void log(LOGLEVEL level, const char* func, const std::string &format, Args &&... args) {
 	auto cur_level = Logger::getInstance()->level();
 	if (level < cur_level) {
 		return;
@@ -73,7 +73,7 @@ void log(LOGLEVEL level, const std::string &format, Args &&... args) {
 	auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
 
 	std::tm tm_now{};
-	localtime_r(&now_time_t, &tm_now);  // 线程安全的本地时间转换
+	localtime_r(&now_time_t, &tm_now);  // 线程安全的时间转换
 
 	// 格式化时间
 	std::ostringstream time_stream;
@@ -84,23 +84,20 @@ void log(LOGLEVEL level, const std::string &format, Args &&... args) {
 	thread_stream << std::this_thread::get_id();
 	std::string thread_id = thread_stream.str();
 
-	// 格式化消息
 	std::string message = formatMessage(format, std::forward<Args>(args)...);
 
-	// 组合日志输出
 	std::ostringstream log_stream;
-	log_stream << "[" << time_stream.str() << "] [" << thread_id << "] [" << levelToString(level) << "] " << message;
+	log_stream << "[" << time_stream.str() << "] [" << thread_id << "] [" << levelToString(level) << "] "
+			   << "[" << func << "] " << message;
 
-	// 记录日志
 	Logger::getInstance()->Log(log_stream.str());
 }
 
 
-
-#define LOG_INFO(...) log(LOGLEVEL::INFO, __VA_ARGS__)
-#define LOG_DEBUG(...) log(LOGLEVEL::DEBUG, __VA_ARGS__)
-#define LOG_WARN(...) log(LOGLEVEL::WARN, __VA_ARGS__)
-#define LOG_FATAL(...) log(LOGLEVEL::FATAL, __VA_ARGS__)
+#define LOG_INFO(format, ...) log(LOGLEVEL::INFO, __PRETTY_FUNCTION__, format, ##__VA_ARGS__)
+#define LOG_DEBUG(format, ...) log(LOGLEVEL::DEBUG, __PRETTY_FUNCTION__, format, ##__VA_ARGS__)
+#define LOG_WARN(format, ...) log(LOGLEVEL::WARN, __PRETTY_FUNCTION__, format, ##__VA_ARGS__)
+#define LOG_FATAL(format, ...) log(LOGLEVEL::FATAL, __PRETTY_FUNCTION__, format, ##__VA_ARGS__)
 
 
 
