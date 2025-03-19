@@ -24,7 +24,7 @@ class Config {
   explicit Config(const std::string &config_path);
   void parse(const std::string &path);
   static void destroy();
-  void trim(std::string& content);
+  static void trim(std::string& content);
  private:
   static Config *instance_;
   std::unordered_map<std::string, std::string> config_map_;
