@@ -54,7 +54,7 @@ std::string levelToString(LOGLEVEL level) {
 	switch (level) {
 		case LOGLEVEL::INFO: return "INFO";
 		case LOGLEVEL::DEBUG: return "DEBUG";
-		case LOGLEVEL::WARN: return "WARN";
+		case LOGLEVEL::ERROR: return "ERROR";
 		case LOGLEVEL::FATAL: return "FATAL";
 		default: return "UNKNOWN";
 	}
@@ -96,7 +96,7 @@ void log(LOGLEVEL level, const char* func, const std::string &format, Args &&...
 
 #define LOG_INFO(format, ...) log(LOGLEVEL::INFO, __PRETTY_FUNCTION__, format, ##__VA_ARGS__)
 #define LOG_DEBUG(format, ...) log(LOGLEVEL::DEBUG, __PRETTY_FUNCTION__, format, ##__VA_ARGS__)
-#define LOG_WARN(format, ...) log(LOGLEVEL::WARN, __PRETTY_FUNCTION__, format, ##__VA_ARGS__)
+#define LOG_ERROR(format, ...) log(LOGLEVEL::ERROR, __PRETTY_FUNCTION__, format, ##__VA_ARGS__)
 #define LOG_FATAL(format, ...) log(LOGLEVEL::FATAL, __PRETTY_FUNCTION__, format, ##__VA_ARGS__)
 
 
