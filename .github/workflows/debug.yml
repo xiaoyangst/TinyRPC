@@ -20,6 +20,16 @@ jobs:
         cmake ..
         make -j$(nproc)
         sudo make install
+    - name: Build and install protobuf
+      run: |
+        git clone --depth=1 --branch v21.12 https://github.com/protocolbuffers/protobuf.git
+        cd protobuf
+        git submodule update --init --recursive
+        mkdir build && cd build
+        cmake .. -DCMAKE_CXX_STANDARD=17
+        make -j$(nproc)
+        sudo make install
+        sudo ldconfig
     - name: Build and install GoogleTest
       run: |
         cd /usr/src/googletest
