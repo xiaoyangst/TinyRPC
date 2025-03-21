@@ -12,7 +12,14 @@ jobs:
     steps:
     - name: Install dependencies
       run: sudo apt-get update && sudo apt-get install -y cmake g++ libgtest-dev
-
+    - name: Build and install libhv
+      run: |
+        git clone --depth=1 https://github.com/ithewei/libhv.git
+        cd libhv
+        mkdir build && cd build
+        cmake ..
+        make -j$(nproc)
+        sudo make install
     - name: Build and install GoogleTest
       run: |
         cd /usr/src/googletest
