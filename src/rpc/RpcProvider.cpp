@@ -104,11 +104,6 @@ void RpcProvider::OnMessage(const hv::SocketChannelPtr &conn, hv::Buffer *buf) {
 	auto header_data = actual_data.substr(0, header_len);
 	auto args_data = actual_data.substr(header_len);
 
-	// auto actual_header_data =
-
-	std::cout << "OnMessage header: " << header_data << std::endl;
-	std::cout << "OnMessage args: " << args_data << std::endl;
-
 	tinyrpc::RpcHeader rpc_header = tinyrpc::RpcHeader();
 	if (!rpc_header.ParseFromString(header_data)) {
 		LOG_ERROR("ParseFromString failed");
@@ -119,10 +114,6 @@ void RpcProvider::OnMessage(const hv::SocketChannelPtr &conn, hv::Buffer *buf) {
 	auto service_name = rpc_header.service_name();
 	auto method_name = rpc_header.method_name();
 	auto args_len = rpc_header.args_len();
-
-	std::cout << "service_name: " << service_name << std::endl;
-	std::cout << "method_name: " << method_name << std::endl;
-	std::cout << "args_len: " << args_len << std::endl;
 
 	// 遍历 service_dic
 	for (auto &service : service_dic) {
@@ -148,9 +139,6 @@ void RpcProvider::OnMessage(const hv::SocketChannelPtr &conn, hv::Buffer *buf) {
 
 	// 方法所需的参数
 	auto request = service->GetRequestPrototype(method).New();
-	std::cout << "method_args: " << request->SerializeAsString() << std::endl;
-
-	std::cout << " 1 " << std::endl;
 
 	if (!request->ParseFromString(args_data)) {
 		LOG_ERROR("ParseFromString failed");
@@ -158,8 +146,6 @@ void RpcProvider::OnMessage(const hv::SocketChannelPtr &conn, hv::Buffer *buf) {
 	}
 
 	auto response = service->GetResponsePrototype(method).New();
-
-	std::cout << " 2 " << std::endl;
 
 	// 调用服务提供的方法
 	auto done = google::protobuf::NewCallback<RpcProvider, const hv::SocketChannelPtr &, google::protobuf::Message *>(
@@ -171,7 +157,7 @@ void RpcProvider::OnMessage(const hv::SocketChannelPtr &conn, hv::Buffer *buf) {
 	std::cout << "method_name: " << method_name << std::endl;
 	std::cout << "method_args: " << request->SerializeAsString() << std::endl;
 #endif
-	service->CallMethod(method, nullptr, request, response, done);
+	service->CallMethod(method, nullptr, request, response, done);		// 调用提供的 rpc 服务，其内部会调用本地 rpc 服务
 
 }
 
@@ -183,7 +169,7 @@ void RpcProvider::SendRpcResponse(const hv::SocketChannelPtr &conn, google::prot
 		return;
 	}
 
-	conn->write(response_str);
+	conn->write(HvProtocol::packMessageAsString(response_str));
 	conn->close();
 }
 

@@ -30,10 +30,6 @@ void RpcChannel::CallMethod(const google::protobuf::MethodDescriptor *method,
 	request->SerializeToString(&args_str);
 	uint32_t args_len = args_str.size();
 
-	std::cout << "service_name = " << service_name << " size" << service_name.size() << std::endl;
-	std::cout << "method_name = " << method_name << " size" << service_name.size() << std::endl;
-	std::cout << "args_str = " << args_str << " size" << service_name.size() << std::endl;
-
 	rpc_header.set_service_name(service_name);
 	rpc_header.set_method_name(method_name);
 	rpc_header.set_args_len(args_len);
@@ -49,8 +45,6 @@ void RpcChannel::CallMethod(const google::protobuf::MethodDescriptor *method,
 	auto send_str = HvProtocol::packMessageAsString(rpc_header_str);    // 打包成协议格式 头部 4字节+内容
 
 	auto new_send_str = HvProtocol::packMessageAsString(send_str + args_str);    // 打包成协议格式 头部 4字节+内容
-
-	std::cout << "new_send_str = " << new_send_str << std::endl;
 
 	// 客户端 连接 rpc server
 	auto ip = Config::getInstance()->get("rpc_ip");
@@ -93,21 +87,14 @@ void RpcChannel::CallMethod(const google::protobuf::MethodDescriptor *method,
 
 	  std::string data = std::string((char *)buf->data(), buf->size());
 
-	 // auto recv_buf = HvProtocol::unpackMessage(data);
+	  std::string actual_data;
+	  auto len = HvProtocol::unpackMessage(data, actual_data);
 
-	  // std::cout << recv_buf << std::endl;
-
-	  /*
-	  tinyrpc::RpcHeader rpc_header;
-	  rpc_header.ParseFromString(recv_buf);
-	   */
-
-	  //response->ParseFromString(rpc_header.method_args());
-	  done->Run();
+	  std::cout << actual_data << std::endl;
+	  response->ParseFromArray(actual_data.c_str(), len);
 	};
 
 	tcp_client.start();
 
 	while (getchar() != '\n');
-
 }

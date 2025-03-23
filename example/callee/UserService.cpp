@@ -11,7 +11,7 @@ class UserService : public test::UserServiceRpc {
   // 本地服务，在没有考虑分布式之前，单体架构下的本地服务调用
   bool Login(const std::string &name, const std::string &pwd) {
 	  std::cout << "doing local service: Login" << std::endl;
-	  std::cout << "name: " << name << "pwd:" << pwd << std::endl;
+	  std::cout << "name: " << name << "pwd: " << pwd << std::endl;
 	  return true;
   }
 
@@ -24,7 +24,7 @@ class UserService : public test::UserServiceRpc {
 	  std::cout << "doing remote service: Login" << std::endl;
 	  const auto &name = request->name();
 	  const auto &pwd = request->pwd();
-	  std::cout << "name: " << name << "pwd:" << pwd << std::endl;
+	  std::cout << "name: " << name << "pwd: " << pwd << std::endl;
 	  auto login_result = Login(name, pwd);
 	  test::ResultCode *code = response->mutable_result();
 	  if (login_result) {
@@ -40,10 +40,8 @@ class UserService : public test::UserServiceRpc {
 
 int main() {
 	// 注册服务
-	std::cout << "start register rpc service" << std::endl;
 	RpcProvider provider;
 	provider.NotifyService(new UserService());
 	provider.Run();
-	std::cout << "end register rpc service" << std::endl;
 	return 0;
 }
