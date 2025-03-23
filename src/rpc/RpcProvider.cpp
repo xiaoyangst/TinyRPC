@@ -51,7 +51,7 @@ void RpcProvider::Run() {
 	server_unpack_setting->length_field_coding = ENCODE_BY_BIG_ENDIAN;
 	tcp_server.setUnpack(server_unpack_setting);
 
-	loop_ = tcp_server.loop();
+	//loop_ = tcp_server.loop();
 
 
 	// 设置回调
@@ -77,7 +77,7 @@ void RpcProvider::Run() {
 void RpcProvider::NotifyService(google::protobuf::Service *service) {
 	const auto service_ptr = service->GetDescriptor();    // 获取服务对象描述信息
 
-	const std::string service_name = service_ptr->full_name();    // 获取服务名称
+	const std::string service_name = service_ptr->name();    // 获取服务名称
 	auto method_count = service_ptr->method_count();        // 获得方法个数
 
 	// 存储方法，便于查询
@@ -94,9 +94,23 @@ void RpcProvider::NotifyService(google::protobuf::Service *service) {
 
 void RpcProvider::OnMessage(const hv::SocketChannelPtr &conn, hv::Buffer *buf) {
 	auto data = std::string((char *)buf->data(), buf->size());
-	auto header = HvProtocol::unpackMessage(data);
+
+	std::string tmp_data;
+	auto tmp_len = HvProtocol::unpackMessage(data, tmp_data);
+
+	std::string actual_data;
+	auto header_len = HvProtocol::unpackMessage(tmp_data, actual_data);
+
+	auto header_data = actual_data.substr(0, header_len);
+	auto args_data = actual_data.substr(header_len);
+
+	// auto actual_header_data =
+
+	std::cout << "OnMessage header: " << header_data << std::endl;
+	std::cout << "OnMessage args: " << args_data << std::endl;
+
 	tinyrpc::RpcHeader rpc_header = tinyrpc::RpcHeader();
-	if (!rpc_header.ParseFromString(header)) {
+	if (!rpc_header.ParseFromString(header_data)) {
 		LOG_ERROR("ParseFromString failed");
 		return;
 	}
@@ -104,7 +118,16 @@ void RpcProvider::OnMessage(const hv::SocketChannelPtr &conn, hv::Buffer *buf) {
 	// 反序列化
 	auto service_name = rpc_header.service_name();
 	auto method_name = rpc_header.method_name();
-	auto method_args = rpc_header.method_args();
+	auto args_len = rpc_header.args_len();
+
+	std::cout << "service_name: " << service_name << std::endl;
+	std::cout << "method_name: " << method_name << std::endl;
+	std::cout << "args_len: " << args_len << std::endl;
+
+	// 遍历 service_dic
+	for (auto &service : service_dic) {
+		std::cout << "service_name: " << service.first << std::endl;
+	}
 
 	// 找到服务
 	auto service_iter = service_dic.find(service_name);
@@ -125,13 +148,18 @@ void RpcProvider::OnMessage(const hv::SocketChannelPtr &conn, hv::Buffer *buf) {
 
 	// 方法所需的参数
 	auto request = service->GetRequestPrototype(method).New();
-	auto rpc_args = HvProtocol::unpackMessage(method_args);
-	if (!request->ParseFromString(rpc_args)) {
+	std::cout << "method_args: " << request->SerializeAsString() << std::endl;
+
+	std::cout << " 1 " << std::endl;
+
+	if (!request->ParseFromString(args_data)) {
 		LOG_ERROR("ParseFromString failed");
 		return;
 	}
 
 	auto response = service->GetResponsePrototype(method).New();
+
+	std::cout << " 2 " << std::endl;
 
 	// 调用服务提供的方法
 	auto done = google::protobuf::NewCallback<RpcProvider, const hv::SocketChannelPtr &, google::protobuf::Message *>(
@@ -141,14 +169,15 @@ void RpcProvider::OnMessage(const hv::SocketChannelPtr &conn, hv::Buffer *buf) {
 	// 打印服务名、方法名、参数
 	std::cout << "service_name: " << service_name << std::endl;
 	std::cout << "method_name: " << method_name << std::endl;
-	std::cout << "method_args: " << request->DebugString() << std::endl;
+	std::cout << "method_args: " << request->SerializeAsString() << std::endl;
 #endif
 	service->CallMethod(method, nullptr, request, response, done);
+
 }
 
 void RpcProvider::SendRpcResponse(const hv::SocketChannelPtr &conn, google::protobuf::Message *response) {
 	std::string response_str;
-
+	std::cout << "response: " << response->DebugString() << std::endl;
 	if (!response->SerializeToString(&response_str)) {
 		LOG_ERROR("SerializeToString failed");
 		return;

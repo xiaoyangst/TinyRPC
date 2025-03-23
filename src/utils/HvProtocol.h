@@ -22,7 +22,7 @@ class HvProtocol {
   // 封包函数，将字符串封装成自定义协议格式（头部+数据）
   static std::string packMessageAsString(const std::string &message);
   // 拆包函数，从接收到的数据中提取消息
-  static std::string unpackMessage(const std::string &receivedData);
+  static u_int32_t unpackMessage(const std::string &receivedData, std::string &returnData);
 };
 
 #endif //TINYRPC_SRC_UTILS_HVPROTOCOL_H_

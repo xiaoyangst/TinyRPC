@@ -30,11 +30,16 @@ std::string HvProtocol::packMessageAsString(const std::string &message) {
  * @param receivedData
  * @return 用户本意发送的 message
  */
-std::string HvProtocol::unpackMessage(const std::string &receivedData) {
+u_int32_t HvProtocol::unpackMessage(const std::string &receivedData, std::string &returnData) {
 	// 自定义协议格式：头部长度（4字节）+数据
+	uint32_t len = 0;
+	std::memcpy(&len, receivedData.data(), sizeof(uint32_t));
+
 	std::string unpackedMessage;
 	auto length = receivedData.size() - SERVER_HEAD_LENGTH;
 	unpackedMessage.resize(length);
 	std::memcpy(unpackedMessage.data(), receivedData.data() + SERVER_HEAD_LENGTH, length);
-	return unpackedMessage;
+
+	returnData = unpackedMessage;
+	return ntohl(len);
 }
