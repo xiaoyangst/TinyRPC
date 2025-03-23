@@ -14,6 +14,7 @@
 #include "utils/Config.h"
 #include "proto/rpc_header.pb.h"
 #include "utils/HvProtocol.h"
+#include "utils/Zookeeper.h"
 
 void RpcChannel::CallMethod(const google::protobuf::MethodDescriptor *method,
 							google::protobuf::RpcController *controller,
@@ -46,16 +47,24 @@ void RpcChannel::CallMethod(const google::protobuf::MethodDescriptor *method,
 
 	auto new_send_str = HvProtocol::packMessageAsString(send_str + args_str);    // 打包成协议格式 头部 4字节+内容
 
-	// 客户端 连接 rpc server
-	auto ip = Config::getInstance()->get("rpc_ip");
-	assert(ip != std::nullopt);
-	const auto &rpc_ip = ip.value();
-	auto port = Config::getInstance()->get("rpc_port");
-	assert(port != std::nullopt);
-	const auto &rpc_port = port.value();
+
+	std::string zoo_str = "/" + service_name + "/" + method_name;
+	Zookeeper zk = Zookeeper();
+	zk.start();
+	auto ip_port = zk.getData(zoo_str);
+	if (ip_port.empty()) {
+		std::cout << "get data from zk failed" << std::endl;
+		controller->SetFailed("get data from zk failed");
+		return;
+	}
+	std::cout << ip_port << std::endl;
+
+	int idx = ip_port.find_first_of(':');
+	std::string rpc_ip = ip_port.substr(0, idx);
+	uint16_t rpc_port = std::stoi(ip_port.substr(idx + 1, ip_port.size() - 1 - idx));
 
 	hv::TcpClient tcp_client;
-	auto conn_fd = tcp_client.createsocket(atoi(rpc_port.c_str()), rpc_ip.c_str());
+	auto conn_fd = tcp_client.createsocket(rpc_port, rpc_ip.c_str());
 	if (conn_fd < 0) {
 		controller->SetFailed("connect error");
 		return;
@@ -81,7 +90,7 @@ void RpcChannel::CallMethod(const google::protobuf::MethodDescriptor *method,
 	  }
 	};
 
-	tcp_client.onMessage = [response, done, controller](const auto &channel, const auto &buf) {
+	tcp_client.onMessage = [response](const auto &channel, const auto &buf) {
 
 	  std::cout << "client onMessage" << std::endl;
 

@@ -14,6 +14,7 @@
 #include "utils/Log.h"
 #include "utils/Config.h"
 #include "utils/HvProtocol.h"
+#include "utils/Zookeeper.h"
 #include "proto/rpc_header.pb.h"
 
 void RpcProvider::Run() {
@@ -63,6 +64,20 @@ void RpcProvider::Run() {
 	};
 
 	tcp_server.setThreadNum(4);
+
+	Zookeeper zk;
+	zk.start();    // 连接 zk 服务器
+
+	// 注册服务
+	for (auto service : service_dic) {
+		auto service_path = "/" + service.first;
+		zk.create(service_path,"",0);
+		for (auto method : service.second.method_dic) {
+			auto method_path = service_path + "/" + method.first;
+			zk.create(method_path,"",0);
+		}
+	}
+
 	tcp_server.start();
 
 	std::cout << "RpcProvider start service at " << "ip: " << rpc_ip << " port: " << rpc_port << std::endl;
@@ -157,7 +172,7 @@ void RpcProvider::OnMessage(const hv::SocketChannelPtr &conn, hv::Buffer *buf) {
 	std::cout << "method_name: " << method_name << std::endl;
 	std::cout << "method_args: " << request->SerializeAsString() << std::endl;
 #endif
-	service->CallMethod(method, nullptr, request, response, done);		// 调用提供的 rpc 服务，其内部会调用本地 rpc 服务
+	service->CallMethod(method, nullptr, request, response, done);        // 调用提供的 rpc 服务，其内部会调用本地 rpc 服务
 
 }
 
