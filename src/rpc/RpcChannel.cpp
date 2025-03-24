@@ -8,7 +8,6 @@
   ******************************************************************************
   */
 
-#include <cassert>
 #include <hv/TcpClient.h>
 #include "RpcChannel.h"
 #include "utils/Config.h"
@@ -49,19 +48,23 @@ void RpcChannel::CallMethod(const google::protobuf::MethodDescriptor *method,
 
 
 	std::string zoo_str = "/" + service_name + "/" + method_name;
+
+	//ZkClient
 	Zookeeper zk = Zookeeper();
 	zk.start();
 	auto ip_port = zk.getData(zoo_str);
+	std::cout << "ip_port = " << ip_port << std::endl;
+
 	if (ip_port.empty()) {
-		std::cout << "get data from zk failed" << std::endl;
 		controller->SetFailed("get data from zk failed");
 		return;
 	}
-	std::cout << ip_port << std::endl;
 
 	int idx = ip_port.find_first_of(':');
 	std::string rpc_ip = ip_port.substr(0, idx);
 	uint16_t rpc_port = std::stoi(ip_port.substr(idx + 1, ip_port.size() - 1 - idx));
+
+	std::cout << "rpc_ip = " << rpc_ip << " rpc_port = " << rpc_port << std::endl;
 
 	hv::TcpClient tcp_client;
 	auto conn_fd = tcp_client.createsocket(rpc_port, rpc_ip.c_str());

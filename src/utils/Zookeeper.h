@@ -21,6 +21,7 @@ class Zookeeper {
   void start();
   void create(const std::string& path, const std::string& data, int state);
   std::string getData(const std::string& path);
+  bool exists(const std::string& path);
  private:
   zhandle_t *m_handle;
 };

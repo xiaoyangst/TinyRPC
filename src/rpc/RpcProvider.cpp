@@ -33,6 +33,8 @@ void RpcProvider::Run() {
 	}
 	const std::string &rpc_ip = ip.value();
 
+	auto ip_port = rpc_ip + ":" + std::to_string(rpc_port);
+
 	// 创建TcpServer
 	hv::TcpServer tcp_server;
 	auto listen_fd = tcp_server.createsocket(rpc_port, rpc_ip.c_str());
@@ -52,8 +54,6 @@ void RpcProvider::Run() {
 	server_unpack_setting->length_field_coding = ENCODE_BY_BIG_ENDIAN;
 	tcp_server.setUnpack(server_unpack_setting);
 
-	//loop_ = tcp_server.loop();
-
 
 	// 设置回调
 	tcp_server.onConnection = [this](const hv::SocketChannelPtr &conn) {
@@ -66,15 +66,22 @@ void RpcProvider::Run() {
 	tcp_server.setThreadNum(4);
 
 	Zookeeper zk;
-	zk.start();    // 连接 zk 服务器
+	zk.start();  // 连接 zk 服务器
 
-	// 注册服务
+// 注册服务
 	for (auto service : service_dic) {
 		auto service_path = "/" + service.first;
-		zk.create(service_path,"",0);
+
+		if (!zk.exists(service_path)) {
+			zk.create(service_path, "", 0);  // 创建服务节点
+		}
+
 		for (auto method : service.second.method_dic) {
 			auto method_path = service_path + "/" + method.first;
-			zk.create(method_path,"",0);
+
+			if (!zk.exists(method_path)) {
+				zk.create(method_path, ip_port, ZOO_EPHEMERAL);  // 创建方法节点并记录 rpc 服务器的 ip 和 port
+			}
 		}
 	}
 
