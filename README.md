@@ -246,11 +246,7 @@ service->CallMethod(method, nullptr, request, response, done);
 
 # 其他 RPC 框架 
 
-## grpc
-
-
-
-## srpc
+grpc 和 srpc，只要了解当前这个项目，这些工具的使用也就不再雨里雾里。
 
 # Zookeeper教程
 
