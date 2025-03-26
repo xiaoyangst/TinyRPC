@@ -32,7 +32,6 @@ class RpcProvider {
 	std::unordered_map<std::string, const google::protobuf::MethodDescriptor *> method_dic;
   };
   std::unordered_map<std::string, ServiceInfo> service_dic;    // 存储所有注册的 RPC 服务，方便后续根据服务名找到对应的方法
-  std::shared_ptr<hv::EventLoop> loop_;
 };
 
 #endif //TINYRPC_SRC_RPC_RPCPROVIDER_H_

@@ -65,18 +65,18 @@ void RpcProvider::Run() {
 
 	tcp_server.setThreadNum(4);
 
-	Zookeeper zk;
+	Zookeeper zk{};
 	zk.start();  // 连接 zk 服务器
 
 // 注册服务
-	for (auto service : service_dic) {
+	for (const auto& service : service_dic) {
 		auto service_path = "/" + service.first;
 
 		if (!zk.exists(service_path)) {
 			zk.create(service_path, "", 0);  // 创建服务节点
 		}
 
-		for (auto method : service.second.method_dic) {
+		for (const auto& method : service.second.method_dic) {
 			auto method_path = service_path + "/" + method.first;
 
 			if (!zk.exists(method_path)) {
